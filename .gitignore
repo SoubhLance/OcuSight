@@ -25,7 +25,7 @@ env/
 
 # IDE
 .vscode/
-.idea/s
+.idea/   # ✅ FIX (was .idea/s ❌)
 
 # OS
 .DS_Store
@@ -44,6 +44,7 @@ Thumbs.db
 # Outputs
 outputs/
 logs/
+
 
 # Cache
 .cache/
