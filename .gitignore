@@ -49,3 +49,7 @@ logs/
 # Cache
 .cache/
 .pytest_cache/
+
+
+##pdfs
+.pdf
