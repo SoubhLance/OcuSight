@@ -104,10 +104,25 @@ if __name__ == "__main__":
     preds = predict(args.image)
 
     print("\n🔍 Predictions:")
-    if len(preds) == 0:
-        print("No disease detected above threshold")
+
+if len(preds) == 0:
+    print("✅ Healthy Eye (No disease detected)")
+else:
+    top_pred = preds[0]  # highest confidence
+    conf = top_pred["confidence"] * 100  # convert to %
+
+    if conf < 20:
+        print("✅ Healthy Eye")
+        print(f"   Confidence : {conf:.2f}% (very low risk)")
+    
+    elif conf < 30:
+        print("⚠️ Low Detection (Weak signals found)")
+        print(f"   Confidence : {conf:.2f}%")
+        print("   Suggestion : Monitor regularly or retest with better image")
+    
     else:
-        for r in preds[:5]:  # top 5
+        # Show normal disease predictions
+        for r in preds[:5]:
             print(f"\n🦠 {r['name']} ({r['code']})")
-            print(f"   Confidence : {r['confidence']:.4f}")
+            print(f"   Confidence : {r['confidence']*100:.2f}%")
             print(f"   Info       : {r['description']}")
