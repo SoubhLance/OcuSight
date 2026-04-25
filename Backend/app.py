@@ -1,6 +1,7 @@
 import os
 import io
 import json
+import gdown
 from fastapi import FastAPI, UploadFile, File, HTTPException
 from PIL import Image, UnidentifiedImageError
 import torch
@@ -27,6 +28,12 @@ disease_cols = list(disease_map.keys())
 NUM_CLASSES = len(disease_cols)
 
 # ------------------ LOAD MODEL ------------------
+if not os.path.exists(MODEL_PATH):
+    print("⬇️ Downloading model from Google Drive...")
+    url = "https://drive.google.com/uc?id=1K965YTQ1--6fneSFjHwG98GOOLn3BqgG"
+    gdown.download(url, MODEL_PATH, quiet=False)
+    print("✅ Model downloaded")
+
 # Loaded globally only once
 model = get_resnet50_model(NUM_CLASSES, MODEL_PATH, DEVICE)
 
@@ -73,12 +80,19 @@ async def predict(file: UploadFile = File(...)):
     top_idx = int(sorted_indices[0])
     top_prob = float(probs[top_idx])
 
-    if top_prob < 0.65:
+    if top_prob < 0.50:
         return {
             "status": "Healthy",
-            "message": "No reliable disease detected",
+            "message": "No significant disease detected",
+            "confidence": round(top_prob, 4)
+        }
+
+    elif top_prob < 0.65:
+        return {
+            "status": "Low Confidence",
+            "message": "Weak patterns detected. Not a strong indication of disease.",
             "confidence": round(top_prob, 4),
-            "note": "Model confidence is not strong enough. Likely a normal retina, but consult a doctor if needed."
+            "note": "Consider rechecking or consulting a doctor if symptoms exist."
         }
 
     else:
