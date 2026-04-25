@@ -1,0 +1,186 @@
+{
+  "Disease_Risk": {
+    "full_name": "General Disease Risk",
+    "description": "Indicates presence of any retinal abnormality"
+  },
+  "DR": {
+    "full_name": "Diabetic Retinopathy",
+    "description": "Damage to retina due to diabetes"
+  },
+  "ARMD": {
+    "full_name": "Age-related Macular Degeneration",
+    "description": "Degeneration of macula causing vision loss"
+  },
+  "MH": {
+    "full_name": "Macular Hole",
+    "description": "A small break in the macula affecting central vision"
+  },
+  "DN": {
+    "full_name": "Diabetic Nephropathy",
+    "description": "Kidney damage due to diabetes, often with retinal manifestations"
+  },
+  "MYA": {
+    "full_name": "Myopia",
+    "description": "Nearsightedness condition"
+  },
+  "BRVO": {
+    "full_name": "Branch Retinal Vein Occlusion",
+    "description": "Blockage of small veins draining blood from the retina"
+  },
+  "TSLN": {
+    "full_name": "Tessellated Fundus",
+    "description": "Visible choroidal vessels due to thin retinal pigment epithelium"
+  },
+  "ERM": {
+    "full_name": "Epiretinal Membrane",
+    "description": "Thin scar tissue forming on the macula surface"
+  },
+  "LS": {
+    "full_name": "Lattice Degeneration",
+    "description": "Thinning of the peripheral retina predisposing to tears"
+  },
+  "MS": {
+    "full_name": "Multiple Sclerosis (retinal signs)",
+    "description": "Optic neuritis or retinal nerve fiber layer changes"
+  },
+  "CSR": {
+    "full_name": "Central Serous Retinopathy",
+    "description": "Fluid accumulation under the retina causing detachment"
+  },
+  "ODC": {
+    "full_name": "Optic Disc Cupping",
+    "description": "Enlargement of optic cup, often seen in glaucoma"
+  },
+  "CRVO": {
+    "full_name": "Central Retinal Vein Occlusion",
+    "description": "Blockage of the main retinal vein causing widespread hemorrhage"
+  },
+  "TV": {
+    "full_name": "Tortuous Vessels",
+    "description": "Abnormally twisted or curved retinal blood vessels"
+  },
+  "AH": {
+    "full_name": "Astigmatism / Hyperopia",
+    "description": "Vision distortion due to irregular eye shape"
+  },
+  "ODP": {
+    "full_name": "Optic Disc Drusen",
+    "description": "Calcified deposits in the optic nerve head"
+  },
+  "ODE": {
+    "full_name": "Optic Disc Edema",
+    "description": "Swelling of the optic disc due to increased intracranial pressure"
+  },
+  "ST": {
+    "full_name": "Strabismus",
+    "description": "Misalignment of the eyes"
+  },
+  "AION": {
+    "full_name": "Anterior Ischemic Optic Neuropathy",
+    "description": "Loss of blood flow to the optic nerve head"
+  },
+  "PT": {
+    "full_name": "Posterior Vitreous Detachment",
+    "description": "Separation of vitreous gel from the retina"
+  },
+  "RT": {
+    "full_name": "Retinal Tear",
+    "description": "Break in the retinal tissue"
+  },
+  "RS": {
+    "full_name": "Retinoschisis",
+    "description": "Splitting of the retinal layers"
+  },
+  "CRS": {
+    "full_name": "Choroidal Rupture",
+    "description": "Break in the choroid due to trauma"
+  },
+  "EDN": {
+    "full_name": "Endothelial Dysfunction",
+    "description": "Corneal or retinal vascular endothelial abnormality"
+  },
+  "RPEC": {
+    "full_name": "Retinal Pigment Epithelial Changes",
+    "description": "Alterations in the RPE layer"
+  },
+  "MHL": {
+    "full_name": "Macular Hole with Lamellar features",
+    "description": "Partial thickness macular hole"
+  },
+  "RP": {
+    "full_name": "Retinitis Pigmentosa",
+    "description": "Inherited degenerative retinal disease"
+  },
+  "CWS": {
+    "full_name": "Cotton Wool Spots",
+    "description": "Fluffy white spots from nerve fiber layer ischemia"
+  },
+  "CB": {
+    "full_name": "Cystoid Bodies",
+    "description": "Cystic spaces in the retina"
+  },
+  "ODPM": {
+    "full_name": "Optic Disc Pit Maculopathy",
+    "description": "Macular detachment associated with optic disc pit"
+  },
+  "PRH": {
+    "full_name": "Preretinal Hemorrhage",
+    "description": "Bleeding between retina and vitreous"
+  },
+  "MNF": {
+    "full_name": "Myelinated Nerve Fibers",
+    "description": "White patches of myelinated retinal nerve fibers"
+  },
+  "HR": {
+    "full_name": "Hypertensive Retinopathy",
+    "description": "Retinal damage due to high blood pressure"
+  },
+  "CRAO": {
+    "full_name": "Central Retinal Artery Occlusion",
+    "description": "Blockage of the main retinal artery causing sudden vision loss"
+  },
+  "TD": {
+    "full_name": "Tilted Disc",
+    "description": "Obliquely oriented optic disc"
+  },
+  "CME": {
+    "full_name": "Cystoid Macular Edema",
+    "description": "Fluid-filled cysts in the macula"
+  },
+  "PTCR": {
+    "full_name": "Posterior Capsule Rupture",
+    "description": "Break in the lens posterior capsule"
+  },
+  "CF": {
+    "full_name": "Choroidal Folds",
+    "description": "Wrinkles in the choroidal layer"
+  },
+  "VH": {
+    "full_name": "Vitreous Hemorrhage",
+    "description": "Blood in the vitreous cavity"
+  },
+  "MCA": {
+    "full_name": "Microaneurysms",
+    "description": "Small outpouchings of retinal capillaries"
+  },
+  "VS": {
+    "full_name": "Venous Stasis",
+    "description": "Slow blood flow in retinal veins"
+  },
+  "BRAO": {
+    "full_name": "Branch Retinal Artery Occlusion",
+    "description": "Blockage of a branch retinal artery"
+  },
+  "PLQ": {
+    "full_name": "Plaques",
+    "description": "Hard exudates or cholesterol deposits"
+  },
+  "HPED": {
+    "full_name": "Hemorrhagic Pigment Epithelial Detachment",
+    "description": "Bleeding under the retinal pigment epithelium"
+  },
+  "CL": {
+    "full_name": "Collateral Vessels",
+    "description": "Alternative blood vessel pathways after occlusion"
+  }
+}
