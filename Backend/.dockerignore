@@ -1,0 +1,14 @@
+# Ignore local model weights to keep image size minimal
+best_resnet50.pth
+best_densenet121.pth
+
+# Ignore python caches and environments
+__pycache__/
+*.pyc
+*.pyo
+venv/
+env/
+.env
+
+# MacOS
+.DS_Store
