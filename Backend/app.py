@@ -3,6 +3,7 @@ import io
 import json
 import gdown
 from fastapi import FastAPI, UploadFile, File, HTTPException
+from fastapi.middleware.cors import CORSMiddleware
 from PIL import Image, UnidentifiedImageError
 import torch
 import torchvision.transforms as transforms
@@ -10,12 +11,21 @@ from model import get_resnet50_model
 
 app = FastAPI(title="OcuSight Backend")
 
+# ------------------ CORS ------------------
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
 # ------------------ CONFIG ------------------
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 MODEL_PATH = os.path.join(BASE_DIR, "best_resnet50.pth")
 JSON_PATH = os.path.join(BASE_DIR, "disease_map.json")
 DEVICE = torch.device("cpu") # Map location strictly to cpu as requested
-BEST_THRESHOLD = 0.30
+BEST_THRESHOLD = 0.10
 
 # ------------------ LOAD JSON ------------------
 try:
@@ -52,65 +62,100 @@ transform = transforms.Compose([
 def home():
     return {"message": "OcuSight ResNet50 Backend running 🚀"}
 
-@app.post("/predict")
-async def predict(file: UploadFile = File(...)):
+import shutil
+
+async def _run_inference(file: UploadFile):
+    """Shared inference logic for /predict and /analyze."""
     # Basic error handling for file type
     if not file.content_type or not file.content_type.startswith("image/"):
         raise HTTPException(status_code=400, detail="File provided is not an image.")
 
     try:
-        image_bytes = await file.read()
-        image = Image.open(io.BytesIO(image_bytes)).convert("RGB")
+        # Save file temporarily
+        file_path = f"temp/{file.filename}"
+        os.makedirs("temp", exist_ok=True)
+
+        with open(file_path, "wb") as buffer:
+            shutil.copyfileobj(file.file, buffer)
+
+        image = Image.open(file_path).convert("RGB")
     except UnidentifiedImageError:
         raise HTTPException(status_code=400, detail="Invalid image file format.")
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Error processing image: {str(e)}")
 
-    # Prepare tensor
     tensor = transform(image).unsqueeze(0).to(DEVICE)
 
-    # Inference logic
     with torch.no_grad():
         outputs = model(tensor)
         probs = torch.sigmoid(outputs).cpu().numpy()[0]
 
-    top_conf = float(max(probs))
-    sorted_indices = probs.argsort()[::-1]
+    results = []
 
-    top_idx = int(sorted_indices[0])
-    top_prob = float(probs[top_idx])
+    for i in range(len(probs)):
+        if probs[i] > BEST_THRESHOLD:
+            code = disease_cols[i]
 
-    if top_prob < 0.50:
-        return {
-            "status": "Healthy",
-            "message": "No significant disease detected",
-            "confidence": round(top_prob, 4)
-        }
+            # Get info from JSON
+            info = disease_map.get(code, {
+                "full_name": code,
+                "description": "No description available"
+            })
 
-    elif top_prob < 0.65:
-        return {
-            "status": "Low Confidence",
-            "message": "Weak patterns detected. Not a strong indication of disease.",
-            "confidence": round(top_prob, 4),
-            "note": "Consider rechecking or consulting a doctor if symptoms exist."
-        }
-
-    else:
-        code = disease_cols[top_idx]
-
-        info = disease_map.get(code, {
-            "full_name": code,
-            "description": "No description available"
-        })
-
-        return {
-            "status": "Disease Detected",
-            "top_confidence": round(top_prob, 4),
-            "prediction": {
+            results.append({
                 "code": code,
                 "name": info["full_name"],
                 "description": info["description"],
-                "confidence": round(top_prob, 4)
-            },
-            "advice": "This is an AI-based assessment. Please consult a medical professional for confirmation."
+                "confidence": float(probs[i])
+            })
+
+    # Sort by confidence
+    results.sort(key=lambda x: x["confidence"], reverse=True)
+
+    preds = results
+
+    if len(preds) == 0:
+        return {
+            "status": "Healthy",
+            "confidence": 0,
+            "message": "No significant disease detected",
+            "predictions": []
         }
+
+    top_pred = preds[0]
+    top_conf = top_pred["confidence"]
+
+    # Classification logic (same as CLI)
+    if top_conf < 0.2:
+        return {
+            "status": "Healthy",
+            "confidence": round(top_conf, 4),
+            "message": "Very low risk",
+            "predictions": preds[:5]
+        }
+
+    elif top_conf < 0.3:
+        return {
+            "status": "Low Risk",
+            "confidence": round(top_conf, 4),
+            "message": "Weak signals detected, monitor regularly",
+            "predictions": preds[:5]
+        }
+
+    else:
+        return {
+            "status": "Disease Detected",
+            "confidence": round(top_conf, 4),
+            "top_prediction": top_pred,
+            "predictions": preds[:5],
+            "advice": "Consult a medical professional for confirmation"
+        }
+
+@app.post("/predict")
+async def predict_api(file: UploadFile = File(...)):
+    return await _run_inference(file)
+
+
+@app.post("/analyze")
+async def analyze_api(file: UploadFile = File(...)):
+    return await _run_inference(file)
