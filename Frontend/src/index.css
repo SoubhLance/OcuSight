@@ -1,0 +1,96 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Inter:wght@400;500;600&display=swap');
+
+@layer base {
+  :root {
+    --background: 0 0% 100%;
+    --foreground: 220 20% 10%;
+
+    --card: 0 0% 100%;
+    --card-foreground: 220 20% 10%;
+
+    --popover: 0 0% 100%;
+    --popover-foreground: 220 20% 10%;
+
+    --primary: 18 100% 60%;
+    --primary-foreground: 0 0% 100%;
+
+    --secondary: 220 14% 96%;
+    --secondary-foreground: 220 20% 10%;
+
+    --muted: 220 14% 96%;
+    --muted-foreground: 220 9% 46%;
+
+    --accent: 18 100% 95%;
+    --accent-foreground: 18 100% 40%;
+
+    --destructive: 0 72% 51%;
+    --destructive-foreground: 0 0% 100%;
+
+    --border: 220 13% 91%;
+    --input: 220 13% 91%;
+    --ring: 18 100% 60%;
+
+    --radius: 0.625rem;
+
+    --sidebar-background: 0 0% 100%;
+    --sidebar-foreground: 220 9% 46%;
+    --sidebar-primary: 18 100% 60%;
+    --sidebar-primary-foreground: 0 0% 100%;
+    --sidebar-accent: 18 100% 96%;
+    --sidebar-accent-foreground: 18 100% 40%;
+    --sidebar-border: 220 13% 93%;
+    --sidebar-ring: 18 100% 60%;
+
+    /* Custom OcuSight tokens */
+    --ocusight-orange: 18 100% 60%;
+    --ocusight-orange-dark: 18 100% 50%;
+    --ocusight-red: 0 84% 60%;
+    --ocusight-red-dark: 0 72% 51%;
+    --ocusight-warm-bg: 30 33% 98%;
+    --ocusight-warm-border: 30 90% 85%;
+
+    --gradient-primary: linear-gradient(135deg, hsl(18 100% 60%), hsl(0 84% 60%));
+    --gradient-primary-hover: linear-gradient(135deg, hsl(18 100% 50%), hsl(0 72% 51%));
+    --shadow-card: 0 1px 3px 0 rgba(0, 0, 0, 0.06), 0 1px 2px -1px rgba(0, 0, 0, 0.06);
+    --shadow-card-hover: 0 4px 12px -2px rgba(255, 107, 53, 0.15), 0 2px 6px -2px rgba(0, 0, 0, 0.06);
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+
+  body {
+    @apply bg-background text-foreground font-body antialiased;
+  }
+
+  h1, h2, h3, h4, h5, h6 {
+    @apply font-heading;
+  }
+}
+
+@layer utilities {
+  .gradient-primary {
+    background: var(--gradient-primary);
+  }
+  .gradient-primary-hover:hover {
+    background: var(--gradient-primary-hover);
+  }
+  .shadow-card {
+    box-shadow: var(--shadow-card);
+  }
+  .shadow-card-hover:hover {
+    box-shadow: var(--shadow-card-hover);
+  }
+  .text-gradient {
+    background: var(--gradient-primary);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+}
