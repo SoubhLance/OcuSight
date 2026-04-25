@@ -1,4 +1,4 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { motion } from "framer-motion";
 import { Search, Filter, LayoutGrid, LayoutList, X, Eye } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -12,35 +12,54 @@ import {
 import {
   Dialog, DialogContent, DialogHeader, DialogTitle,
 } from "@/components/ui/dialog";
-import { mockAnalyses } from "@/lib/mock-data";
 import { format } from "date-fns";
 
+interface HistoryRecord {
+  id: string;
+  filename: string;
+  timestamp: string;
+  status: string;
+  confidence: number;
+  top_prediction: { name: string; description: string; code: string; confidence: number } | null;
+  predictions: Array<{ name: string; description: string; code: string; confidence: number }>;
+}
+
 export default function HistoryPage() {
+  const [history, setHistory] = useState<HistoryRecord[]>([]);
+
+  useEffect(() => {
+    fetch("http://localhost:8000/history")
+      .then(res => res.json())
+      .then(data => setHistory(data))
+      .catch(err => console.error("Error fetching history:", err));
+  }, []);
+
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
   const [diseaseFilter, setDiseaseFilter] = useState("all");
   const [viewMode, setViewMode] = useState<"table" | "grid">("table");
-  const [selectedAnalysis, setSelectedAnalysis] = useState<(typeof mockAnalyses)[0] | null>(null);
+  const [selectedAnalysis, setSelectedAnalysis] = useState<HistoryRecord | null>(null);
   const [page, setPage] = useState(1);
   const perPage = 10;
 
   const filtered = useMemo(() => {
-    return mockAnalyses.filter((a) => {
-      if (search && !a.patientName.toLowerCase().includes(search.toLowerCase()) && !a.id.toLowerCase().includes(search.toLowerCase())) return false;
-      if (statusFilter !== "all" && a.status !== statusFilter) return false;
-      if (diseaseFilter !== "all" && a.primaryPrediction !== diseaseFilter) return false;
+    return history.filter((a) => {
+      const predName = a.top_prediction?.name || "Healthy";
+      if (search && !a.filename.toLowerCase().includes(search.toLowerCase()) && !predName.toLowerCase().includes(search.toLowerCase())) return false;
+      if (statusFilter !== "all" && a.status.toLowerCase() !== statusFilter.toLowerCase()) return false;
+      if (diseaseFilter !== "all" && predName !== diseaseFilter) return false;
       return true;
     });
-  }, [search, statusFilter, diseaseFilter]);
+  }, [history, search, statusFilter, diseaseFilter]);
 
   const paged = filtered.slice((page - 1) * perPage, page * perPage);
   const totalPages = Math.ceil(filtered.length / perPage);
-  const diseases = [...new Set(mockAnalyses.map((a) => a.primaryPrediction))];
+  const diseases = [...new Set(history.map((a) => a.top_prediction?.name || "Healthy"))];
 
   const statusBadge = (s: string) => {
-    if (s === "completed") return <Badge className="bg-green-100 text-green-700 hover:bg-green-100">Completed</Badge>;
-    if (s === "pending") return <Badge className="bg-accent text-accent-foreground hover:bg-accent">Pending</Badge>;
-    return <Badge className="bg-blue-100 text-blue-700 hover:bg-blue-100">Processing</Badge>;
+    if (s === "Disease Detected") return <Badge className="bg-red-100 text-red-700 hover:bg-red-100">Disease Detected</Badge>;
+    if (s === "Healthy") return <Badge className="bg-emerald-100 text-emerald-700 hover:bg-emerald-100">Healthy</Badge>;
+    return <Badge className="bg-yellow-100 text-yellow-700 hover:bg-yellow-100">Low Risk</Badge>;
   };
 
   return (
@@ -57,7 +76,7 @@ export default function HistoryPage() {
             <div className="relative flex-1 min-w-[200px]">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
               <Input
-                placeholder="Search by patient name or ID..."
+                placeholder="Search by filename or prediction..."
                 value={search}
                 onChange={(e) => { setSearch(e.target.value); setPage(1); }}
                 className="pl-9 focus-visible:ring-primary"
@@ -70,9 +89,9 @@ export default function HistoryPage() {
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="all">All Status</SelectItem>
-                <SelectItem value="completed">Completed</SelectItem>
-                <SelectItem value="pending">Pending</SelectItem>
-                <SelectItem value="processing">Processing</SelectItem>
+                <SelectItem value="disease detected">Disease Detected</SelectItem>
+                <SelectItem value="healthy">Healthy</SelectItem>
+                <SelectItem value="low risk">Low Risk</SelectItem>
               </SelectContent>
             </Select>
             <Select value={diseaseFilter} onValueChange={(v) => { setDiseaseFilter(v); setPage(1); }}>
@@ -142,13 +161,13 @@ export default function HistoryPage() {
                     className="border-b last:border-0 hover:bg-muted/30 cursor-pointer"
                     onClick={() => setSelectedAnalysis(a)}
                   >
-                    <td className="px-4 py-3 text-sm font-mono text-muted-foreground">{a.id}</td>
+                    <td className="px-4 py-3 text-sm font-mono text-muted-foreground">{a.id.substring(0, 8)}</td>
                     <td className="px-4 py-3">
-                      <p className="text-sm font-medium text-foreground">{a.patientName}</p>
-                      <p className="text-xs text-muted-foreground">{a.patientId}</p>
+                      <p className="text-sm font-medium text-foreground">Patient {a.id.substring(0, 4)}</p>
+                      <p className="text-xs text-muted-foreground">{a.filename}</p>
                     </td>
-                    <td className="px-4 py-3 text-sm text-muted-foreground">{format(new Date(a.uploadDate), "MMM d, yyyy")}</td>
-                    <td className="px-4 py-3 text-sm font-medium text-foreground">{a.primaryPrediction}</td>
+                    <td className="px-4 py-3 text-sm text-muted-foreground">{format(new Date(a.timestamp), "MMM d, yyyy HH:mm")}</td>
+                    <td className="px-4 py-3 text-sm font-medium text-foreground">{a.top_prediction?.name || "Healthy"}</td>
                     <td className="px-4 py-3">
                       <div className="flex items-center gap-2">
                         <Progress value={a.confidence * 100} className="h-1.5 w-16 [&>div]:gradient-primary" />
@@ -177,15 +196,15 @@ export default function HistoryPage() {
               >
                 <CardContent className="p-4 space-y-3">
                   <div className="flex items-center justify-between">
-                    <span className="text-xs font-mono text-muted-foreground">{a.id}</span>
+                    <span className="text-xs font-mono text-muted-foreground">{a.id.substring(0, 8)}</span>
                     {statusBadge(a.status)}
                   </div>
                   <div>
-                    <p className="text-sm font-medium text-foreground">{a.patientName}</p>
-                    <p className="text-xs text-muted-foreground">{format(new Date(a.uploadDate), "MMM d, yyyy")}</p>
+                    <p className="text-sm font-medium text-foreground">Patient {a.id.substring(0, 4)}</p>
+                    <p className="text-xs text-muted-foreground">{format(new Date(a.timestamp), "MMM d, yyyy HH:mm")}</p>
                   </div>
                   <div>
-                    <p className="text-sm font-medium text-primary">{a.primaryPrediction}</p>
+                    <p className="text-sm font-medium text-primary">{a.top_prediction?.name || "Healthy"}</p>
                     <div className="flex items-center gap-2 mt-1">
                       <Progress value={a.confidence * 100} className="h-1.5 flex-1 [&>div]:gradient-primary" />
                       <span className="text-xs font-medium">{Math.round(a.confidence * 100)}%</span>
@@ -217,25 +236,25 @@ export default function HistoryPage() {
 
       {/* Detail dialog */}
       <Dialog open={!!selectedAnalysis} onOpenChange={() => setSelectedAnalysis(null)}>
-        <DialogContent className="max-w-lg">
+        <DialogContent className="max-w-lg max-h-[80vh] overflow-y-auto">
           {selectedAnalysis && (
             <>
               <DialogHeader>
-                <DialogTitle className="font-heading">Analysis {selectedAnalysis.id}</DialogTitle>
+                <DialogTitle className="font-heading">Analysis Details</DialogTitle>
               </DialogHeader>
               <div className="space-y-4">
                 <div className="grid grid-cols-2 gap-4">
                   <div>
                     <p className="text-xs text-muted-foreground">Patient</p>
-                    <p className="text-sm font-medium">{selectedAnalysis.patientName}</p>
+                    <p className="text-sm font-medium">Patient {selectedAnalysis.id.substring(0, 4)}</p>
                   </div>
                   <div>
                     <p className="text-xs text-muted-foreground">Date</p>
-                    <p className="text-sm font-medium">{format(new Date(selectedAnalysis.uploadDate), "MMM d, yyyy")}</p>
+                    <p className="text-sm font-medium">{format(new Date(selectedAnalysis.timestamp), "MMM d, yyyy HH:mm")}</p>
                   </div>
                   <div>
-                    <p className="text-xs text-muted-foreground">Prediction</p>
-                    <p className="text-sm font-medium text-primary">{selectedAnalysis.primaryPrediction}</p>
+                    <p className="text-xs text-muted-foreground">Top Prediction</p>
+                    <p className="text-sm font-medium text-primary">{selectedAnalysis.top_prediction?.name || "Healthy"}</p>
                   </div>
                   <div>
                     <p className="text-xs text-muted-foreground">Confidence</p>
@@ -245,13 +264,32 @@ export default function HistoryPage() {
                     <p className="text-xs text-muted-foreground">Status</p>
                     {statusBadge(selectedAnalysis.status)}
                   </div>
-                  {selectedAnalysis.severity && (
-                    <div>
-                      <p className="text-xs text-muted-foreground">Severity</p>
-                      <Badge variant="outline" className="capitalize">{selectedAnalysis.severity}</Badge>
-                    </div>
-                  )}
+                  <div>
+                    <p className="text-xs text-muted-foreground">Filename</p>
+                    <p className="text-sm font-medium truncate" title={selectedAnalysis.filename}>{selectedAnalysis.filename}</p>
+                  </div>
                 </div>
+
+                {selectedAnalysis.top_prediction && (
+                  <div className="mt-4">
+                    <p className="text-xs text-muted-foreground mb-1">Description</p>
+                    <p className="text-sm bg-muted p-3 rounded-md leading-relaxed">{selectedAnalysis.top_prediction.description}</p>
+                  </div>
+                )}
+
+                {selectedAnalysis.predictions && selectedAnalysis.predictions.length > 0 && (
+                  <div className="mt-4 space-y-2">
+                    <p className="text-xs text-muted-foreground mb-1">All Predictions</p>
+                    <div className="space-y-1.5">
+                      {selectedAnalysis.predictions.map((p, idx) => (
+                        <div key={idx} className="flex justify-between items-center text-sm bg-muted/50 px-3 py-2 rounded-md">
+                          <span className="font-medium">{p.name}</span>
+                          <Badge variant="secondary">{Math.round(p.confidence * 100)}%</Badge>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
               </div>
             </>
           )}

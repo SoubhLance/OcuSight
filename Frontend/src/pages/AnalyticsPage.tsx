@@ -1,10 +1,9 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
 import { Users, ScanEye, TrendingUp, Activity } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { StatCard } from "@/components/StatCard";
-import { mockChartData, mockStats } from "@/lib/mock-data";
 import {
   PieChart, Pie, Cell, ResponsiveContainer, Tooltip,
   BarChart, Bar, XAxis, YAxis, CartesianGrid,
@@ -16,8 +15,39 @@ const periods = ["7 days", "30 days", "3 months", "12 months"] as const;
 const container = { hidden: {}, show: { transition: { staggerChildren: 0.08 } } };
 const item = { hidden: { opacity: 0, y: 12 }, show: { opacity: 1, y: 0 } };
 
+interface AnalyticsData {
+  total_scans: number;
+  total_patients: number;
+  avg_confidence: number;
+  detection_rate: number;
+  disease_distribution: Array<{ name: string; value: number }>;
+  monthly_uploads: Array<{ month: string; uploads: number }>;
+  confidence_trend: Array<{ month: string; avg: number }>;
+}
+
 export default function AnalyticsPage() {
   const [period, setPeriod] = useState<(typeof periods)[number]>("12 months");
+  const [analytics, setAnalytics] = useState<AnalyticsData | null>(null);
+
+  useEffect(() => {
+    fetch(`http://localhost:8000/analytics?period=${encodeURIComponent(period)}`)
+      .then((res) => res.json())
+      .then((data) => setAnalytics(data))
+      .catch((err) => console.error("Error fetching analytics:", err));
+  }, [period]);
+
+  const totalScans = analytics?.total_scans ?? 0;
+  const totalPatients = analytics?.total_patients ?? 0;
+  const avgConfidence = analytics ? (analytics.avg_confidence * 100).toFixed(1) + "%" : "0.0%";
+  const detectionRate = analytics ? (analytics.detection_rate * 100).toFixed(1) + "%" : "0.0%";
+
+  const COLORS = ["#0088FE", "#00C49F", "#FFBB28", "#FF8042", "#8884d8", "#82ca9d"];
+  const diseaseDistribution = (analytics?.disease_distribution ?? []).map((d, index) => ({
+    ...d,
+    fill: COLORS[index % COLORS.length]
+  }));
+  const monthlyUploads = analytics?.monthly_uploads ?? [];
+  const confidenceTrend = analytics?.confidence_trend ?? [];
 
   return (
     <motion.div variants={container} initial="hidden" animate="show" className="space-y-6">
@@ -43,10 +73,10 @@ export default function AnalyticsPage() {
 
       {/* Stats */}
       <motion.div variants={item} className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        <StatCard title="Total Patients" value="892" icon={Users} trend={{ value: 15, positive: true }} />
-        <StatCard title="Total Scans" value={mockStats.totalScans.toLocaleString()} icon={ScanEye} trend={{ value: 12, positive: true }} />
-        <StatCard title="Avg Confidence" value="92.4%" icon={TrendingUp} trend={{ value: 3.2, positive: true }} />
-        <StatCard title="Detection Rate" value={`${mockStats.detectionRate}%`} icon={Activity} trend={{ value: 1.8, positive: true }} />
+        <StatCard title="Total Patients" value={totalPatients.toLocaleString()} icon={Users} trend={{ value: 15, positive: true }} />
+        <StatCard title="Total Scans" value={totalScans.toLocaleString()} icon={ScanEye} trend={{ value: 12, positive: true }} />
+        <StatCard title="Avg Confidence" value={avgConfidence} icon={TrendingUp} trend={{ value: 3.2, positive: true }} />
+        <StatCard title="Detection Rate" value={detectionRate} icon={Activity} trend={{ value: 1.8, positive: true }} />
       </motion.div>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
@@ -61,7 +91,7 @@ export default function AnalyticsPage() {
                 <ResponsiveContainer width="100%" height="100%">
                   <PieChart>
                     <Pie
-                      data={mockChartData.diseaseDistribution}
+                      data={diseaseDistribution}
                       cx="50%"
                       cy="50%"
                       innerRadius={55}
@@ -71,7 +101,7 @@ export default function AnalyticsPage() {
                       stroke="hsl(0 0% 100%)"
                       label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}
                     >
-                      {mockChartData.diseaseDistribution.map((entry, i) => (
+                      {diseaseDistribution.map((entry, i) => (
                         <Cell key={i} fill={entry.fill} />
                       ))}
                     </Pie>
@@ -92,7 +122,7 @@ export default function AnalyticsPage() {
             <CardContent>
               <div className="h-64">
                 <ResponsiveContainer width="100%" height="100%">
-                  <BarChart data={mockChartData.monthlyUploads}>
+                  <BarChart data={monthlyUploads}>
                     <CartesianGrid strokeDasharray="3 3" stroke="hsl(220 13% 91%)" />
                     <XAxis dataKey="month" tick={{ fontSize: 12 }} />
                     <YAxis tick={{ fontSize: 12 }} />
@@ -114,7 +144,7 @@ export default function AnalyticsPage() {
             <CardContent>
               <div className="h-64">
                 <ResponsiveContainer width="100%" height="100%">
-                  <LineChart data={mockChartData.confidenceTrend}>
+                  <LineChart data={confidenceTrend}>
                     <CartesianGrid strokeDasharray="3 3" stroke="hsl(220 13% 91%)" />
                     <XAxis dataKey="month" tick={{ fontSize: 12 }} />
                     <YAxis domain={[80, 100]} tick={{ fontSize: 12 }} />
