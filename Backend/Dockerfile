@@ -16,13 +16,13 @@ RUN apt-get update && apt-get install -y \
     && rm -rf /var/lib/apt/lists/*
 
 # Copy requirements file
-COPY requirements.txt .
+COPY Backend/requirements.txt .
 
 # Install Python dependencies using the CPU-only PyTorch index to keep image size minimal
 RUN pip install --no-cache-dir -r requirements.txt --extra-index-url https://download.pytorch.org/whl/cpu
 
 # Copy the rest of the application code
-COPY . .
+COPY Backend/ .
 
 # Expose port
 EXPOSE 8080
