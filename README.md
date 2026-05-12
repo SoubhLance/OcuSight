@@ -6,6 +6,50 @@ A deep learning system for automated retinal disease detection from fundus image
 
 ---
 
+## 📄 Published Research
+
+> **OcuSight: Benchmark Performance vs. Clinical Deployment Reliability in Retinal Multi-Disease Classification**
+
+| Field | Details |
+|---|---|
+| Authors | Shiva Marath, Soubhik Sadhu, Adnan Nagdiwala, Vaddi Ranga Koushik |
+| Journal | International Journal of Innovative Research in Technology (IJIRT) |
+| ISSN | 2349-6002 |
+| Volume / Issue | 12 / 12 |
+| Pages | 2381–2390 |
+| Published | May 2026 |
+| Impact Factor | 8.412 (2026) |
+| Paper ID | IJIRT200619 |
+| Article URL | [ijirt.org/article?manuscript=200619](https://ijirt.org/article?manuscript=200619) |
+| PDF | [Download Paper](https://ijirt.org/publishedpaper/IJIRT200619_PAPER.pdf) |
+
+**Abstract:** Benchmarking statistics alone do not give clinicians confidence in automated retinal screening systems. This paper documents the development and iteration of OcuSight — a multi-label fundus disease classifier on the RFMiD dataset — comparing ResNet-50 and DenseNet-121 backbones across retinal fundus, brain MRI, and chest X-ray imaging. While DenseNet-121 outperformed ResNet-50 on controlled test sets (macro-F1: 0.2023 vs. 0.1769), real-world deployment revealed critical failure modes — misclassifying healthy retinas as pathological and vice versa. Investigation led to replacing DenseNet-121 with ResNet-50, which produced well-calibrated outputs (e.g., 86.11% pathology probability for confirmed abnormal fundus). Findings are supported by a comprehensive architectural comparison, a survey of all 51 RFMiD 2.0 disease categories, and Grad-CAM saliency analysis.
+
+**Cite this paper:**
+```
+Marath, S., & Sadhu, S., & Nagdiwala, A., & Koushik, V. R. (2026). OcuSight: Benchmark Performance
+vs. Clinical Deployment Reliability in Retinal Multi-Disease Classification.
+International Journal of Innovative Research in Technology (IJIRT), 12(12), 2381–2390.
+```
+
+**BibTeX:**
+```bibtex
+@article{200619,
+  author    = {Shiva Marath and Soubhik Sadhu and Adnan Nagdiwala and Vaddi Ranga Koushik},
+  title     = {OcuSight: Benchmark Performance vs. Clinical Deployment Reliability in Retinal Multi-Disease Classification},
+  journal   = {International Journal of Innovative Research in Technology},
+  year      = {2026},
+  volume    = {12},
+  number    = {12},
+  pages     = {2381--2390},
+  issn      = {2349-6002},
+  url       = {https://ijirt.org/article?manuscript=200619},
+  month     = {May},
+}
+```
+
+---
+
 ## Architecture
 
 ```mermaid
@@ -83,6 +127,7 @@ OcuSight/
 | ML Framework | PyTorch 2.1 + CUDA 12.1 |
 | Model | ResNet-50 (ImageNet pretrained) |
 | Precision | BF16 mixed precision + TF32 |
+| Explainability | Grad-CAM saliency maps |
 | Recommendations | Gemini API → JSON |
 | Environment | `.env` for secrets |
 
@@ -102,6 +147,8 @@ OcuSight/
 | Epochs | 50 (early stopping, patience=10) |
 | Precision | BF16 (RTX 4060 native) |
 | Inference | ~15ms on RTX 4060 |
+
+> **Why ResNet-50?** During development, DenseNet-121 achieved a higher macro-F1 (0.2023 vs. 0.1769) on controlled test sets, but produced clinically unacceptable false positive and false negative rates on real-world fundus images. ResNet-50 was selected for its well-calibrated, deployment-stable outputs. See the [published paper](https://ijirt.org/article?manuscript=200619) for the full architectural comparison and Grad-CAM analysis.
 
 ---
 
