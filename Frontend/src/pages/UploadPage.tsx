@@ -15,6 +15,7 @@ import { toast } from "sonner";
 interface FormattedResult {
   status: string;
   confidence: number;
+  severity?: "high" | "medium" | "low";
   top?: { name: string; description: string; code: string; confidence: number };
   list?: Array<{ name: string; description: string; code: string; confidence: number }>;
   message?: string;
@@ -81,6 +82,7 @@ export default function UploadPage() {
       setResult({
         status: data.status,
         confidence: Math.round((data.confidence || 0) * 100),
+        severity: data.severity,
         top: data.top_prediction,
         list: data.predictions,
         message: data.message,
@@ -107,6 +109,14 @@ export default function UploadPage() {
   const StatusIcon = isHealthy
     ? <CheckCircle2 className="h-5 w-5 text-emerald-500" />
     : <AlertTriangle className={`h-5 w-5 ${isDisease ? "text-red-500" : "text-yellow-500"}`} />;
+
+  // ── Severity badge helpers ────────────────────────────────────────────────
+  const severityConfig = {
+    high:   { label: "High Severity",   classes: "bg-red-100 text-red-700 border-red-300" },
+    medium: { label: "Medium Severity", classes: "bg-yellow-100 text-yellow-700 border-yellow-300" },
+    low:    { label: "Low Severity",    classes: "bg-emerald-100 text-emerald-700 border-emerald-300" },
+  };
+  const severityBadge = result?.severity ? severityConfig[result.severity] : null;
 
   // ── Render ────────────────────────────────────────────────────────────────
   return (
@@ -204,13 +214,20 @@ export default function UploadPage() {
 
                 {/* Row 1 — Status badge + Confidence */}
                 <div className="flex items-start justify-between">
-                  <div className="space-y-1">
+                  <div className="space-y-2">
                     <div className="flex items-center gap-2">
                       {StatusIcon}
                       <span className={`font-heading font-bold text-lg ${statusColor}`}>
                         {result.status}
                       </span>
                     </div>
+                    {/* Severity badge */}
+                    {severityBadge && (
+                      <span className={`inline-flex items-center gap-1.5 text-xs font-semibold px-2.5 py-1 rounded-full border ${severityBadge.classes}`}>
+                        <span className="w-1.5 h-1.5 rounded-full bg-current" />
+                        {severityBadge.label}
+                      </span>
+                    )}
                   </div>
 
                   <div className="text-right">
@@ -256,12 +273,19 @@ export default function UploadPage() {
                   </div>
                 )}
 
-                {/* Advice — only shown when present */}
-                {result.advice ? (
-                  <p className="text-xs text-muted-foreground italic border-l-2 border-muted-foreground/30 pl-3 mt-4">
-                    {result.advice}
-                  </p>
-                ) : null}
+                {/* AI Suggestions */}
+                {result.advice && (
+                  <div className="mt-4 rounded-xl border border-blue-200 bg-gradient-to-br from-blue-50 to-indigo-50 overflow-hidden">
+                    <div className="flex items-center gap-2 px-4 py-3 bg-blue-100/70 border-b border-blue-200">
+                      <svg className="h-4 w-4 text-blue-600 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 2a10 10 0 1 0 10 10"/><path d="M12 8v4l3 3"/><circle cx="18" cy="6" r="3"/></svg>
+                      <h3 className="text-sm font-bold text-blue-800 tracking-wide">AI-Generated Suggestions</h3>
+                      <span className="ml-auto text-[10px] font-semibold uppercase tracking-widest text-blue-500 bg-blue-100 px-2 py-0.5 rounded-full border border-blue-200">Gemini</span>
+                    </div>
+                    <p className="px-4 py-3 text-sm text-slate-700 leading-relaxed whitespace-pre-line">
+                      {result.advice}
+                    </p>
+                  </div>
+                )}
 
               </CardContent>
             </Card>

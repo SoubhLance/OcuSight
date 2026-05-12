@@ -9,6 +9,80 @@ import torch
 import torchvision.transforms as transforms
 from model import get_resnet50_model
 from datetime import datetime, timedelta
+from dotenv import load_dotenv
+from google import genai
+
+# Load environment variables
+load_dotenv()
+
+# ── Gemini Setup ───────────────────────────────────────────────────────────────
+_GEMINI_API_KEY = os.getenv("GEMINI_API_KEY", "")
+_gemini_client = None
+
+if _GEMINI_API_KEY:
+    _gemini_client = genai.Client(api_key=_GEMINI_API_KEY)
+
+FALLBACK_ADVICE = (
+    "Maintain eye hygiene, reduce screen time, and consult a doctor if symptoms persist."
+)
+
+
+def _get_severity(confidence_pct: float) -> str:
+    """Return severity tier based on confidence percentage (0-100)."""
+    if confidence_pct > 70:
+        return "high"
+    elif confidence_pct >= 40:
+        return "medium"
+    return "low"
+
+
+def generate_gemini_response(disease: str, confidence: float) -> str:
+    """
+    Generate AI-powered medical advice using Gemini.
+    confidence is a 0-1 float; internally converted to percentage.
+    Falls back to static advice on any error.
+    """
+    if not _gemini_client:
+        return FALLBACK_ADVICE
+
+    conf_pct = round(confidence * 100, 1)
+    severity = _get_severity(conf_pct)
+
+    if severity == "high":
+        prompt = (
+            f"A retinal scan AI detected '{disease}' with {conf_pct}% confidence (HIGH). "
+            "As a helpful medical assistant, provide concise advice in 3-4 short bullet points covering: "
+            "1) Likely remedies or treatments, 2) Precautions the patient should take, "
+            "3) Lifestyle or dietary tips to slow progression, "
+            "4) A strong recommendation to consult an ophthalmologist immediately. "
+            "Be empathetic but clinical. Do NOT use asterisks or markdown formatting."
+        )
+    elif severity == "medium":
+        prompt = (
+            f"A retinal scan AI detected '{disease}' with {conf_pct}% confidence (MEDIUM – uncertain). "
+            "As a helpful medical assistant, provide concise advice in 3 short bullet points covering: "
+            "1) Basic precautions to follow, 2) Symptoms to monitor at home, "
+            "3) Advice to consult a doctor if symptoms persist or worsen. "
+            "Be reassuring but cautious. Do NOT use asterisks or markdown formatting."
+        )
+    else:  # low
+        prompt = (
+            f"A retinal scan AI returned a low-confidence result ({conf_pct}%) for '{disease}'. "
+            "The patient may be healthy. As a helpful medical assistant, provide 3 short bullet points on: "
+            "1) General eye care tips, 2) Reducing screen time and eye strain exercises, "
+            "3) A light suggestion to consult a doctor if they notice any vision changes. "
+            "Keep the tone positive and simple. Do NOT use asterisks or markdown formatting."
+        )
+
+    try:
+        response = _gemini_client.models.generate_content(
+            model="gemini-2.0-flash",
+            contents=prompt
+        )
+        text = response.text.strip()
+        return text if text else FALLBACK_ADVICE
+    except Exception:
+        return FALLBACK_ADVICE
 
 app = FastAPI(title="OcuSight Backend")
 
@@ -134,22 +208,34 @@ async def _run_inference(file: UploadFile):
     preds = results
 
     if len(preds) == 0:
+        # No disease signal — treat as healthy with low confidence
+        severity = "low"
+        advice = generate_gemini_response("Healthy Eye", 0.0)
         result_data = {
             "status": "Healthy",
             "confidence": 0,
+            "severity": severity,
             "message": "No significant disease detected",
+            "advice": advice,
             "predictions": []
         }
     else:
         top_pred = preds[0]
         top_conf = top_pred["confidence"]
+        conf_pct = top_conf * 100
+        severity = _get_severity(conf_pct)
+
+        # Generate Gemini advice
+        advice = generate_gemini_response(top_pred["name"], top_conf)
 
         # Classification logic (same as CLI)
         if top_conf < 0.2:
             result_data = {
                 "status": "Healthy",
                 "confidence": round(top_conf, 4),
+                "severity": severity,
                 "message": "Very low risk",
+                "advice": advice,
                 "predictions": preds[:5]
             }
 
@@ -157,7 +243,9 @@ async def _run_inference(file: UploadFile):
             result_data = {
                 "status": "Low Risk",
                 "confidence": round(top_conf, 4),
+                "severity": severity,
                 "message": "Weak signals detected, monitor regularly",
+                "advice": advice,
                 "predictions": preds[:5]
             }
 
@@ -165,9 +253,10 @@ async def _run_inference(file: UploadFile):
             result_data = {
                 "status": "Disease Detected",
                 "confidence": round(top_conf, 4),
+                "severity": severity,
                 "top_prediction": top_pred,
                 "predictions": preds[:5],
-                "advice": "Consult a medical professional for confirmation"
+                "advice": advice
             }
 
     # Save prediction
@@ -177,6 +266,7 @@ async def _run_inference(file: UploadFile):
         "timestamp": datetime.now().isoformat(),
         "status": result_data["status"],
         "confidence": result_data["confidence"],
+        "severity": result_data.get("severity"),
         "top_prediction": result_data.get("top_prediction"),
         "predictions": result_data.get("predictions", [])
     }
